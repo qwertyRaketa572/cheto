@@ -48,16 +48,12 @@ class MyWidget2(QMainWindow):
         self.tw.itemChanged.connect(self.item_changed)
         self.modified = {}
         self.titles = None
+        self.new = False
 
     def update_result(self):
         cur = self.con.cursor()
         result = cur.execute("SELECT * FROM coffee WHERE id=?", (item_id := self.spinBox.text(),)).fetchall()
         self.tw.setRowCount(len(result))
-        if not result:
-            self.statusBar().showMessage('Ничего не нашлось')
-            return
-        else:
-            self.statusBar().showMessage(f"Нашлась запись с id = {item_id}")
         self.tw.setColumnCount(len(result[0]))
         self.titles = [description[0] for description in cur.description]
         for i, elem in enumerate(result):
@@ -71,18 +67,34 @@ class MyWidget2(QMainWindow):
     def save_results(self):
         if self.modified:
             cur = self.con.cursor()
-            que = "UPDATE coffee SET\n"
-            que += ", ".join([f"{key}='{self.modified.get(key)}'"
-            for key in self.modified.keys()])
-            que += "WHERE id = ?"
-            print(que)
-            cur.execute(que, (self.spinBox.text(),))
+            quer = "INSERT INTO coffee VALUES("
+            quen = "UPDATE coffee SET\n"
+
+            if self.new:
+                que = quer + ", ".join([f"'{self.modified.get(key)}'"
+                for key in self.modified.keys()])
+                que += ")"
+                print(que)
+                res = cur.execute("""SELECT * FROM coffee""").fetchall()
+                cur.execute(que)
+            else:
+                que = quen + ", ".join([f"{key}='{self.modified.get(key)}'"
+                for key in self.modified.keys()])
+                que += "WHERE id = ?"
+                print(que)
+                cur.execute(que, (self.spinBox.text(),))
             self.con.commit()
             self.modified.clear()
 
     def create_new(self):
         cur = self.con.cursor()
-        cur.execute("""INSERT INTO coffee VALUES (input(), input(), input(), input(), input(), input(), input())""")
+        self.tw.setColumnCount(7)
+        self.tw.setRowCount(1)
+        self.titles = ['ID', 'sort', 'degree_of_roasting', 'ground_in_grains', 'taste_description', 'price', 'packing_volume']
+        for j in range(7):
+            self.tw.setItem(1, j, QTableWidgetItem(''))
+        self.new = True
+        self.modified = {}
 
 
 if __name__ == '__main__':
