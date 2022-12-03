@@ -2,3 +2,4 @@ sys
 PyQt5
 PyQt5.QtSql
 PyQt5.QtWidgets
+sqlite3
